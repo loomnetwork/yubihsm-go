@@ -3,6 +3,7 @@ package yubihsm
 import (
 	"bytes"
 	"errors"
+	"log"
 	"sync"
 	"time"
 
@@ -69,9 +70,14 @@ func (s *SessionManager) pingRoutine() {
 			if !bytes.Equal(parsedResp.Data, echoPayload) {
 				err = errors.New("echoed data is invalid")
 			}
+		} else {
+			// Session seems to be dead - reconnect and swap
+			err = s.swapSession()
+			if err != nil {
+				log.Printf("swapping dead session failed; err=%v", err)
+			}
 		}
 
-		println("pinged")
 		s.keepAlive.Reset(pingInterval)
 	}
 }
